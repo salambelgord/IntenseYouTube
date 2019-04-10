@@ -1,7 +1,8 @@
 const switcher = document.querySelector('#cbx'),
       more = document.querySelector('.more'),
       modal = document.querySelector('.modal'),
-      videos = document.querySelectorAll('.videos__item');
+      videos = document.querySelectorAll('.videos__item'),
+      videosWrapper = document.querySelector('.videos__wrapper');
 let player;
 
   function bindSlideToggle(trigger, boxBody, content, openClass) {
@@ -115,6 +116,103 @@ const data = [
 //   sliceTitle('.videos__item-descr', 80);
 // });
 
+function start(){
+  gapi.client.init({
+    'apiKey': 'AIzaSyD284dYPs8twn1AeQNmmUF7kuoQpsTjnQE',
+    'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest']
+
+  }).then(function(){
+    return gapi.client.youtube.playlistItems.list({
+      "part":"snippet,contentDetails",
+      "maxResults":'6',
+      "playlistId":"PLUeq-FmwEBJ75xFCfQ1_AusjbmfeBtb4G"
+    })
+  }).then(function(response){
+console.log(response.result);
+response.result.items.forEach(item => {
+  let card = document.createElement('a');
+       card.classList.add('videos__item', 'videos__item-active');
+       card.setAttribute('data-url', item.contentDetails.videoId);
+       card.innerHTML = `
+        <img src="${item.snippet.thumbnails.medium.url}" alt="thumb">
+        <div class="videos__item-descr">
+        ${item.snippet.title}
+        </div>
+        <div class="videos__item-views">
+       2.7 тыс просмотров
+        </div>
+       `;
+       videosWrapper.appendChild(card);
+       setTimeout(() => {
+       card.classList.remove('videos__item-active');
+       }, 10);
+       
+  
+});
+let itemVideo = document.querySelectorAll('.videos__item');
+bindModal(itemVideo);
+sliceTitle('.videos__item-descr',60);
+
+  }).catch(e => {
+    console.log(e);
+  });
+}
+
+more.addEventListener('click',() =>{
+  more.remove();
+  gapi.load('client',start); //load video
+});
+function search(target){
+  gapi.client.init({
+    'apiKey': 'AIzaSyD284dYPs8twn1AeQNmmUF7kuoQpsTjnQE',
+    'discoveryDocs': ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest']
+
+  }).then (function(){
+    return gapi.client.youtube.search.list({
+        'maxResults':'9',
+        'part':'snippet',
+        'q':`${target}`,
+        'type': ''
+    });
+  }).then (function(response){
+    console.log(response.result);
+    //videosWrapper.innerHTML = '';
+    while (videosWrapper.firstChild){
+      videosWrapper.removeChild(videosWrapper.firstChild);
+    }
+    response.result.items.forEach(item => {
+      let card = document.createElement('a');
+           card.classList.add('videos__item', 'videos__item-active');
+           card.setAttribute('data-url', item.id.videoId);
+           card.innerHTML = `
+            <img src="${item.snippet.thumbnails.medium.url}" alt="thumb">
+            <div class="videos__item-descr">
+            ${item.snippet.title}
+            </div>
+            <div class="videos__item-views">
+           2.7 тыс просмотров
+            </div>
+           `;
+           videosWrapper.appendChild(card);
+           setTimeout(() => {
+           card.classList.remove('videos__item-active');
+           }, 10);
+           
+      
+    });
+    let itemVideo = document.querySelectorAll('.videos__item');
+    bindModal(itemVideo);
+    sliceTitle('.videos__item-descr',60);
+  })
+}
+
+document.querySelector('.search').addEventListener('submit',(e) => {
+  let valSearch = document.querySelector('.search > input').value;
+  e.preventDefault();
+  gapi.load('client', () => {search(valSearch)});
+  document.querySelector('.search > input').value = '';//очистить поле поиска
+});
+
 function sliceTitle (selector, count){
 document.querySelectorAll(selector).forEach(item => {
   item.textContent.trim();
@@ -127,7 +225,7 @@ document.querySelectorAll(selector).forEach(item => {
   }
 });
 }
-sliceTitle('.videos__item-descr', 100);
+sliceTitle('.videos__item-descr', 60);
 
 function openModal(){
   modal.style.display = 'block';
@@ -148,7 +246,7 @@ function bindModal(cards){
     })
   })
 }
-bindModal(videos);
+//bindModal(videos);
 
 function bindNewModal(cards){
   cards.addEventListener('click', (e) => {
